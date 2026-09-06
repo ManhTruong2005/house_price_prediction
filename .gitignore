@@ -15,6 +15,10 @@ env/
 # Jupyter Notebook
 .ipynb_checkpoints/
 
+# Tests
+.pytest_cache/
+pytest-cache-files-*/
+
 # Models (regenerate with: python src/savemodel.py)
 models/*.pkl
 

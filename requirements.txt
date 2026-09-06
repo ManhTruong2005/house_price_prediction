@@ -1,8 +1,9 @@
-pandas
-numpy
-scikit-learn
-xgboost
-matplotlib
-joblib
-notebook
-openpyxl
+pandas==2.3.3
+numpy==2.3.4
+scikit-learn==1.7.2
+xgboost==3.2.0
+matplotlib==3.10.7
+joblib==1.5.2
+openpyxl==3.1.5
+pytest==8.4.2
+streamlit==1.56.0

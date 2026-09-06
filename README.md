@@ -1,151 +1,196 @@
-# 🏠 House Price Prediction
+# House Price Prediction
 
-Dự án dự đoán giá nhà sử dụng Machine Learning trên dataset [Ames Housing](https://www.kaggle.com/c/house-prices-advanced-regression-techniques) từ Kaggle.
+Dự án dự đoán giá nhà với dataset Ames Housing từ Kaggle:
+[House Prices - Advanced Regression Techniques](https://www.kaggle.com/c/house-prices-advanced-regression-techniques).
 
-## 📁 Cấu Trúc Dự Án
+## Project Structure
 
-```
+```text
 house_price_prediction/
-├── data/                              # Dữ liệu
-│   ├── train.csv                      # Dữ liệu huấn luyện (1460 mẫu)
-│   ├── test.csv                       # Dữ liệu kiểm tra (1459 mẫu)
-│   ├── sample_submission.csv          # Mẫu file nộp bài Kaggle
-│   └── data_description.txt           # Mô tả chi tiết các features
-├── models/                            # Model đã train
-│   ├── xgboost_model.pkl              # Model XGBoost đã lưu
-│   └── feature_columns.pkl            # Danh sách feature columns
-├── notebooks/                         # Jupyter Notebooks
-│   └── EDA.ipynb                      # Exploratory Data Analysis
-├── src/                               # Source code
-│   ├── preprocess.py                  # Pipeline tiền xử lý dữ liệu
-│   ├── train.py                       # Linear Regression
-│   ├── random_forest.py               # Random Forest
-│   ├── xgboost_model.py               # XGBoost
-│   ├── compare_models.py              # So sánh tất cả models + xuất Excel
-│   └── savemodel.py                   # Lưu model đã train
-├── evaluation_plots/                   # Biểu đồ đánh giá model
-│   ├── actual_vs_predicted.png        # Biểu đồ Actual vs Predicted
-│   ├── residual_analysis.png          # Phân tích residuals
-│   ├── feature_importance.png         # Feature importance (RF & XGB)
-│   └── metrics_comparison.png         # So sánh metrics giữa các models
-├── model_comparison_results.xlsx       # Kết quả so sánh models (Excel)
-├── requirements.txt                    # Dependencies
-├── .gitignore
+├── data/
+│   ├── train.csv
+│   ├── test.csv
+│   ├── sample_submission.csv
+│   └── data_description.txt
+├── evaluation_plots/
+│   ├── actual_vs_predicted.png
+│   ├── residual_analysis.png
+│   ├── feature_importance.png
+│   └── metrics_comparison.png
+├── models/
+│   ├── xgboost_model.pkl
+│   └── feature_columns.pkl
+├── notebooks/
+│   └── EDA.ipynb
+├── src/
+│   ├── preprocess.py
+│   ├── train.py
+│   ├── random_forest.py
+│   ├── xgboost_model.py
+│   ├── compare_models.py
+│   ├── savemodel.py
+│   └── predict.py
+├── tests/
+│   └── test_pipeline.py
+├── requirements.txt
 └── README.md
 ```
 
-## 🚀 Cài Đặt
+## Installation
 
 ```bash
-# Clone repository
-git clone https://github.com/ManhTruong2005/house_price_prediction.git
-cd house_price_prediction
-
-# Tạo virtual environment (khuyến nghị)
 python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # Linux / Mac
-
-# Cài đặt dependencies
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Dependencies
-
-| Package | Mô tả |
-|---|---|
-| `pandas` | Xử lý và phân tích dữ liệu |
-| `numpy` | Tính toán số học |
-| `scikit-learn` | Thuật toán ML & metrics đánh giá |
-| `xgboost` | Gradient Boosting framework |
-| `matplotlib` | Vẽ biểu đồ |
-| `joblib` | Lưu/tải model |
-| `notebook` | Jupyter Notebook |
-| `openpyxl` | Xuất kết quả ra file Excel |
-
-## 📊 Sử Dụng
-
-### So sánh tất cả models (khuyến nghị)
+Trên Linux hoặc macOS:
 
 ```bash
-python src/compare_models.py
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Script này sẽ:
-- Train và evaluate 3 models (Linear Regression, Random Forest, XGBoost)
-- Cross-validation 5-fold
-- In bảng so sánh metrics ra console
-- Lưu 4 biểu đồ đánh giá vào `evaluation_plots/`
-- Xuất kết quả chi tiết ra file `model_comparison_results.xlsx`
+## Dataset
 
-### Chạy từng model riêng lẻ
+Các file dữ liệu gốc nằm trong `data/`:
+
+- `train.csv`: dữ liệu train, có cột target `SalePrice`.
+- `test.csv`: dữ liệu test Kaggle, không có `SalePrice`.
+- `sample_submission.csv`: định dạng submission mẫu.
+- `data_description.txt`: mô tả ý nghĩa các feature.
+
+Không cần chỉnh sửa các file dữ liệu gốc.
+
+## Preprocessing
+
+Pipeline preprocessing dùng chung cho train và inference nằm trong `src/preprocess.py`.
+
+Các bước chính:
+
+- Fill missing values theo nhóm feature.
+- Loại outlier chỉ khi xử lý training data có `SalePrice`.
+- Log transform target bằng `np.log1p(SalePrice)` khi train.
+- Drop `Id` khỏi feature để model không học theo mã dòng dữ liệu.
+- One-hot encoding categorical features.
+- Khi inference, align cột test theo đúng `feature_columns.pkl` đã lưu từ training.
+
+## Training
+
+Chạy từng model riêng:
 
 ```bash
-python src/train.py            # Linear Regression
-python src/random_forest.py    # Random Forest
-python src/xgboost_model.py    # XGBoost
+python src/train.py
+python src/random_forest.py
+python src/xgboost_model.py
 ```
 
-### Lưu model
+Các script này có `main()` guard, nên import module sẽ không tự động train model.
+
+## Model Saving
+
+Model binary trong `models/*.pkl` đang được `.gitignore` bỏ qua, vì vậy một người clone project mới cần tự tạo lại artifacts:
 
 ```bash
 python src/savemodel.py
 ```
 
-> **Lưu ý**: Tất cả các lệnh phải được chạy từ **thư mục gốc** của dự án.
+Lệnh này sẽ train XGBoost trên `data/train.csv` và tạo:
 
-## 🧠 Models
+- `models/xgboost_model.pkl`
+- `models/feature_columns.pkl`
 
-| Model | Mô tả | Hyperparameters chính |
-|---|---|---|
-| **Linear Regression** | Hồi quy tuyến tính cơ bản | — |
-| **Random Forest** | Ensemble learning với decision trees | `n_estimators=200`, `n_jobs=-1` |
-| **XGBoost** | Gradient boosting | `n_estimators=1000`, `learning_rate=0.01`, `max_depth=3` |
+`feature_columns.pkl` là danh sách cột sau preprocessing, dùng để đảm bảo inference có cùng thứ tự và số lượng feature với training.
 
-## 📈 Đánh Giá Models
+## Prediction
 
-### Metrics sử dụng
+Sau khi có model artifacts, tạo submission từ `data/test.csv`:
 
-| Metric | Ý nghĩa |
-|---|---|
-| **R² Score** | Hệ số xác định — tỷ lệ phương sai được giải thích (càng cao càng tốt) |
-| **RMSE (Log)** | Root Mean Squared Error trên log scale (càng thấp càng tốt) |
-| **MAE (Log)** | Mean Absolute Error trên log scale |
-| **RMSE ($)** | RMSE quy đổi sang USD |
-| **MAE ($)** | MAE quy đổi sang USD |
-| **CV RMSE** | Cross-Validation RMSE (5-fold) |
+```bash
+python src/predict.py
+```
 
-### Biểu đồ đánh giá
+Output:
 
-Các biểu đồ được tự động tạo bởi `compare_models.py` và lưu trong `evaluation_plots/`:
+```text
+submission.csv
+```
 
-1. **Actual vs Predicted** — So sánh giá trị thực tế và dự đoán cho cả 3 models
-2. **Residual Analysis** — Phân tích phần dư để kiểm tra bias
-3. **Feature Importance** — Top 15 features quan trọng nhất (Random Forest & XGBoost)
-4. **Metrics Comparison** — Bar chart so sánh R², RMSE, CV RMSE giữa các models
+File submission có đúng 2 cột:
 
-### Kết quả Excel
+```text
+Id
+SalePrice
+```
 
-File `model_comparison_results.xlsx` chứa 5 sheets:
+và 1459 dòng dữ liệu.
 
-| Sheet | Nội dung |
-|---|---|
-| Model Comparison | Bảng so sánh metrics tổng hợp |
-| Hyperparameters | Chi tiết hyperparameters từng model |
-| Feature Importance | Top 20 features quan trọng nhất |
-| Dataset Info | Thông tin tổng quan dataset |
-| Prediction Details | Chi tiết dự đoán từng mẫu |
+## Web Interface
 
-## 🔧 Pipeline Xử Lý Dữ Liệu
+Chạy giao diện dự đoán bằng Streamlit:
 
-1. **Xử lý Missing Values** — Categorical → `'None'`, Numerical → median, Categorical khác → mode
-2. **Loại bỏ Outliers** — Loại nhà có `GrLivArea > 4000 sqft` nhưng `SalePrice < $300,000`
-3. **Log Transform** — Target (`SalePrice`) được transform bằng `log1p`
-4. **One-Hot Encoding** — Mã hóa các biến categorical
-5. **Train/Test Split** — 80/20 với `random_state=42`
+```bash
+streamlit run app.py
+```
 
-## 📝 Dataset
+Giao diện cho phép:
 
-- **Nguồn**: [Kaggle — House Prices: Advanced Regression Techniques](https://www.kaggle.com/c/house-prices-advanced-regression-techniques)
-- **Kích thước**: 1460 mẫu training, 1459 mẫu test
-- **Features**: 79 features mô tả các khía cạnh của nhà ở tại Ames, Iowa
+- Dùng trực tiếp `data/test.csv`.
+- Upload một file CSV khác có cột `Id`.
+- Xem preview kết quả dự đoán.
+- Download `submission.csv`.
+
+## Model Comparison
+
+Chạy so sánh Linear Regression, Random Forest và XGBoost:
+
+```bash
+python src/compare_models.py
+```
+
+Script sẽ lưu plots vào `evaluation_plots/` và kết quả chi tiết vào `model_comparison_results.xlsx`.
+Mặc định script không mở GUI. Nếu muốn xem plot tương tác:
+
+```bash
+python src/compare_models.py --show-plots
+```
+
+Nếu chỉ muốn tạo plots mà không xuất Excel:
+
+```bash
+python src/compare_models.py --no-excel
+```
+
+## Testing
+
+Chạy kiểm tra syntax:
+
+```bash
+python -m compileall src
+```
+
+Chạy automated tests:
+
+```bash
+pytest
+```
+
+Các test kiểm tra:
+
+- Train/test preprocessing chạy được.
+- `test.csv` không cần `SalePrice`.
+- Feature train và inference khớp nhau.
+- Model load được và predict đủ số dòng test.
+- Submission có đúng cột, đúng số dòng, không có NaN trong `SalePrice`.
+
+## Expected Fresh Clone Flow
+
+```bash
+pip install -r requirements.txt
+python src/savemodel.py
+python src/predict.py
+pytest
+```
+
+Sau flow này, project sẽ có model artifacts trong `models/` và file `submission.csv` ở thư mục gốc.

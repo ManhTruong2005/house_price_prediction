@@ -1,100 +1,59 @@
-# src/save_model.py
+from pathlib import Path
 
 import joblib
-import numpy as np
-import pandas as pd
-
 from xgboost import XGBRegressor
 
-from preprocess import (
-    handle_missing_values,
-    remove_outliers
-)
+from preprocess import PROJECT_ROOT, prepare_training_data
 
 
-# =====================================
-# LOAD DATA
-# =====================================
-
-df = pd.read_csv('data/train.csv')
-
-df = handle_missing_values(df)
-
-df = remove_outliers(df)
+MODEL_DIR = PROJECT_ROOT / "models"
+MODEL_PATH = MODEL_DIR / "xgboost_model.pkl"
+FEATURE_COLUMNS_PATH = MODEL_DIR / "feature_columns.pkl"
 
 
-# =====================================
-# FEATURES / TARGET
-# =====================================
-
-X = df.drop('SalePrice', axis=1)
-
-y = np.log1p(df['SalePrice'])
-
-
-# =====================================
-# ONE HOT ENCODING
-# =====================================
-
-X = pd.get_dummies(
-    X,
-    drop_first=True
-)
+def build_model():
+    return XGBRegressor(
+        n_estimators=1000,
+        learning_rate=0.01,
+        max_depth=3,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        objective="reg:squarederror",
+        verbosity=0,
+    )
 
 
-# SAVE FEATURE COLUMNS
-feature_columns = X.columns
+def train_and_save_model(
+    train_path=PROJECT_ROOT / "data" / "train.csv",
+    model_path=MODEL_PATH,
+    feature_columns_path=FEATURE_COLUMNS_PATH,
+):
+    X, y = prepare_training_data(train_path)
+    model = build_model()
+    model.fit(X, y)
+
+    model_path = Path(model_path)
+    feature_columns_path = Path(feature_columns_path)
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+
+    joblib.dump(model, model_path)
+    joblib.dump(X.columns, feature_columns_path)
+
+    return model, X.columns
 
 
-# =====================================
-# CREATE MODEL
-# =====================================
+def main():
+    model, feature_columns = train_and_save_model()
 
-model = XGBRegressor(
-
-    n_estimators=1000,
-
-    learning_rate=0.01,
-
-    max_depth=3,
-
-    subsample=0.8,
-
-    colsample_bytree=0.8,
-
-    random_state=42,
-
-    objective='reg:squarederror'
-)
+    print("=" * 50)
+    print("MODEL SAVED SUCCESSFULLY")
+    print("=" * 50)
+    print(f"Model path          : {MODEL_PATH}")
+    print(f"Feature columns path: {FEATURE_COLUMNS_PATH}")
+    print(f"Feature count       : {len(feature_columns)}")
+    print(f"Model feature count : {model.n_features_in_}")
 
 
-# =====================================
-# TRAIN MODEL
-# =====================================
-
-model.fit(X, y)
-
-
-# =====================================
-# SAVE MODEL
-# =====================================
-
-joblib.dump(
-    model,
-    'models/xgboost_model.pkl'
-)
-
-
-# =====================================
-# SAVE FEATURE COLUMNS
-# =====================================
-
-joblib.dump(
-    feature_columns,
-    'models/feature_columns.pkl'
-)
-
-
-print('=' * 50)
-print('MODEL SAVED SUCCESSFULLY')
-print('=' * 50)
+if __name__ == "__main__":
+    main()
